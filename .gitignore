@@ -1,3 +1,4 @@
-*.json
+cases/*.json
+enriched/*.json
 .DS_Store
-*.xlsx
+*.numbers
