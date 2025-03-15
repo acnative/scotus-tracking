@@ -1,0 +1,19 @@
+{
+    "name": "SCOTUS Docket Search",
+    "description": "Open and parse the SCOTUS Docket page directly in the browser.",
+    "version": "0.1",
+    "manifest_version": 3,
+    "permissions": [
+      "tabs",
+      "scripting"
+    ],
+    "host_permissions": [
+      "https://www.supremecourt.gov/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_title": "Open SCOTUS"
+    }
+  }
