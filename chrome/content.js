@@ -200,7 +200,7 @@ function getRecentMonths() {
     let currentYear = now.getFullYear();
     const recent = [];
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 3; i++) {
         let monthIndex = currentMonthIndex - i;
         let year = currentYear;
         if (monthIndex < 0) {
@@ -221,7 +221,9 @@ async function runAllQueries() {
         updateProgress(idx + 1, totalQueries, 1); // Reset page number for new query.
         console.log(`\n[${idx + 1}/${totalQueries}] Running query: ${q}`);
         // Pass the additional parameters so they are defined in runAspxSearch.
-        const results = await runAspxSearch(`"capital case" "2025" January`, idx + 1, totalQueries);
+        // FOR TESTING: USE THIS:
+        //const results = await runAspxSearch(`"capital case" "2025" January`, idx + 1, totalQueries);
+        const results = await runAspxSearch(q, idx + 1, totalQueries);
         globalSearchResults = globalSearchResults.concat(results);
     }
 
