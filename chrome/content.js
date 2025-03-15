@@ -136,6 +136,7 @@ function parseDocketHtml(html) {
         if (match) {
             const currentPage = parseInt(match[1], 10);
             const totalPages = parseInt(match[2], 10);
+            console.log("Current page:", currentPage, "Total pages:", totalPages);
             if (currentPage != totalPages) {
                 hasNext = true;
             }
@@ -153,7 +154,7 @@ function parseDocketHtml(html) {
  */
 async function runAspxSearch(query, queryIndex, totalQueries) {
     let pageCount = 1;
-    updateProgress(queryIndex, totalQueries, pageCount);
+    updateProgress(queryIndex, totalQueries, query, pageCount);
     console.log(`\nRunning search for: ${query}`);
     const initialVars = getInitialPageVars();
 
@@ -181,7 +182,7 @@ async function runAspxSearch(query, queryIndex, totalQueries) {
 
         let parseObj = parseDocketHtml(nextHtml);
         pageCount++;
-        updateProgress(queryIndex, totalQueries, pageCount);
+        updateProgress(queryIndex, totalQueries, query, pageCount);
         console.log(`Page ${pageCount} results for "${query}":`, parseObj.results);
         const processedNextPageResults = await processSearchResults(parseObj.results);
         console.log("Processed next page results:", processedNextPageResults);
@@ -213,7 +214,7 @@ function getRecentMonths() {
     let currentYear = now.getFullYear();
     const recent = [];
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 1; i++) {
         let monthIndex = currentMonthIndex - i;
         let year = currentYear;
         if (monthIndex < 0) {
@@ -231,7 +232,7 @@ async function runAllQueries() {
 
     const totalQueries = queries.length;
     for (const [idx, q] of queries.entries()) {
-        updateProgress(idx + 1, totalQueries, 1); // Reset page number for new query.
+        updateProgress(idx + 1, totalQueries, q, 1);
         console.log(`\n[${idx + 1}/${totalQueries}] Running query: ${q}`);
         // Pass the additional parameters so they are defined in runAspxSearch.
         // FOR TESTING: USE THIS:
@@ -466,8 +467,8 @@ function downloadCSV() {
  * @param {number} totalQueries - Total queries to run.
  * @param {number} page - The current page number of the current query.
  */
-function updateProgress(queryIndex, totalQueries, page) {
-    progressDiv.textContent = `Query ${queryIndex} of ${totalQueries} - Page ${page}`;
+function updateProgress(queryIndex, totalQueries, query, page) {
+    progressDiv.textContent = `Query ${queryIndex} of ${totalQueries} (${query}) - Page ${page}`;
 }
 
 // Create and style the progress element and add it to the page.
