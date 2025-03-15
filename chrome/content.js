@@ -127,9 +127,20 @@ function parseDocketHtml(html) {
     const viewstateInput = doc.querySelector("input[name='__VIEWSTATE']");
     const newViewstate = viewstateInput ? viewstateInput.value : "";
 
-    // Check if a Next button is present:
-    const nextButton = doc.querySelector("#ctl00_ctl00_MainEditable_mainContent_cmdNext");
-    const hasNext = !!nextButton;
+    let hasNext = false;
+    const pageInfoSpan = doc.querySelector("#ctl00_ctl00_MainEditable_mainContent_lblCurrentPage");
+    if (pageInfoSpan) {
+        const pageText = pageInfoSpan.innerText;
+        // Expected format: "43 items found. Page: 9 of 9 for your search"
+        const match = pageText.match(/Page:\s*(\d+)\s*of\s*(\d+)/i);
+        if (match) {
+            const currentPage = parseInt(match[1], 10);
+            const totalPages = parseInt(match[2], 10);
+            if (currentPage != totalPages) {
+                hasNext = true;
+            }
+        }
+    }
 
     return { results, newViewstate, hasNext };
 }
@@ -156,7 +167,9 @@ async function runAspxSearch(query, queryIndex, totalQueries) {
     let lastHTML = html;
 
     // Pagination loop – continue if the "Next" button is present
-    while (true && pageCount === 1) {
+    while (true && hasNext) {
+        // FOR TESTING
+        // && pageCount === 1) {
         await sleep(randomDelay());
         const nextHtml = await postNextPage(newViewstate, query, initialVars);
 
