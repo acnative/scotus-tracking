@@ -84,6 +84,8 @@ async function postNextPage(viewstate, query, initialVars) {
     body.set("__VIEWSTATEGENERATOR", initialVars.viewstateGenerator);
     body.set("__ASYNCPOST", "true");
 
+    console.log("Viewstate:", initialVars.viewstateGenerator, viewstate);
+
     const response = await fetch("https://www.supremecourt.gov/docket/docket.aspx", {
         method: "POST",
         headers: {
@@ -97,6 +99,21 @@ async function postNextPage(viewstate, query, initialVars) {
         credentials: "include"
     });
     return response.text();
+}
+
+function parseAsyncResponseFields(responseText) {
+    const tokens = responseText.split("|");
+    const fields = {};
+    for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i] === "hiddenField" && tokens[i + 1]) {
+            // The next token is the field name and the token after that is its value.
+            const fieldName = tokens[i + 1];
+            const fieldValue = tokens[i + 2] || "";
+            fields[fieldName] = fieldValue;
+            i += 2;
+        }
+    }
+    return fields;
 }
 
 /**
@@ -119,13 +136,24 @@ function parseDocketHtml(html) {
         const href = anchor ? anchor.getAttribute("href") : "";
         const docketMatch = anchor.innerText.match(/Docket for (.+?)(?=\s*\*|$)/i);
         const docketId = docketMatch ? docketMatch[1] : null;
-        const docketInfo = extractDocketInfo(fs.querySelector("cc"));
+        const docketInfo = extractDocketInfo(fs);
         return { id: docketId, url: href, title: docketInfo.title, petitioner: docketInfo.petitioner, prevailing: docketInfo.prevailing };
     });
 
-    // Get the new __VIEWSTATE value for the next post
+    // Try to get the new __VIEWSTATE from the DOM first.
+    let newViewstate = "";
     const viewstateInput = doc.querySelector("input[name='__VIEWSTATE']");
-    const newViewstate = viewstateInput ? viewstateInput.value : "";
+    if (viewstateInput && viewstateInput.value.trim().length > 0) {
+        newViewstate = viewstateInput.value;
+    } else {
+        // Fallback: try parsing the whole response with the async-parsing method.
+        const fields = parseAsyncResponseFields(html);
+        if (fields.__VIEWSTATE) {
+            newViewstate = fields.__VIEWSTATE;
+        }
+    }
+
+    console.log("New viewstate:", newViewstate);
 
     let hasNext = false;
     const pageInfoSpan = doc.querySelector("#ctl00_ctl00_MainEditable_mainContent_lblCurrentPage");
@@ -214,7 +242,7 @@ function getRecentMonths() {
     let currentYear = now.getFullYear();
     const recent = [];
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 3; i++) {
         let monthIndex = currentMonthIndex - i;
         let year = currentYear;
         if (monthIndex < 0) {
@@ -253,14 +281,36 @@ async function runAllQueries() {
  * Given a result string (like "Docket for 16-5909Title: ..."), extracts the docket id.
  * Adjust the regex if the pattern changes.
  */
-function extractDocketInfo(titleHTML) {
+function extractDocketInfo(fs) {
+    console.log(fs);
+    let titleHTML = fs.querySelector("cc");
+    if (!titleHTML) {
+        titleHTML = fs.querySelector("td");
+        if (!titleHTML) {
+            const html = fs.innerHTML; // or your HTML string
+            const match = html.match(/Title:\s*([\s\S]*?)(?=<br)/i);
+            if (match) {
+                titleHTML = match[1].trim();
+            }
+            else {
+                titleHTML = "";
+            }
+        }
+        else {
+            titleHTML = titleHTML.innerText;
+        }
+    }
+    else {
+        titleHTML = titleHTML.innerHTML
+    }
+
     console.log(titleHTML);
 
     let title = "";
     let petitioner = "";
     let prevailing = "";
 
-    title = titleHTML.innerText
+    title = titleHTML
         .replace(/<[^>]+>/g, "")        // Remove any HTML tags
         .replace("Title:", "")
         .replace(/\n/g, ' ')
@@ -475,7 +525,7 @@ function updateProgress(queryIndex, totalQueries, query, page) {
 function initProgressDiv() {
     progressDiv = document.createElement('div');
     progressDiv.style.position = 'fixed';
-    progressDiv.style.bottom = '0';
+    progressDiv.style.top = '0';
     progressDiv.style.right = '0';
     progressDiv.style.padding = '5px';
     progressDiv.style.backgroundColor = 'yellow';
