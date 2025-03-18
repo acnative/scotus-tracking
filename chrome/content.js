@@ -234,8 +234,8 @@ async function runAspxSearch(query, queryIndex, totalQueries) {
 
 function getRecentMonths() {
     const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
     const now = new Date();
     let currentMonthIndex = now.getMonth();
@@ -451,31 +451,39 @@ function convertResultsToCSV(data) {
     // Define which fields come from the parent result.
     const parentKeys = headerFields.filter(key => key !== "date" && key !== "detail");
 
+    // Use a Set to track unique rows.
+    const seenRows = new Set();
+
     data.forEach(result => {
         if (Array.isArray(result.entries) && result.entries.length > 0) {
             result.entries.forEach(entry => {
-                // Build a row by looping over headerFields.
                 let row = headerFields.map(field => {
                     let value = "";
                     if (parentKeys.includes(field)) {
                         // Get the parent's field value.
                         value = result[field] || "";
                     } else {
-                        // For entry-specific fields
+                        // For entry-specific fields.
                         value = entry[field] || "";
                     }
-                    // Escape quotes and wrap the field in quotes.
                     return `"${(value + "").replace(/"/g, '""')}"`;
                 });
-                csv += row.join(",") + "\n";
+                const rowStr = row.join(",");
+                if (!seenRows.has(rowStr)) {
+                    seenRows.add(rowStr);
+                    csv += rowStr + "\n";
+                }
             });
         } else {
-            // If no entries, output a row with parent's keys and empty for entries.
             let row = headerFields.map(field => {
                 let value = parentKeys.includes(field) ? (result[field] || "") : "";
                 return `"${(value + "").replace(/"/g, '""')}"`;
             });
-            csv += row.join(",") + "\n";
+            const rowStr = row.join(",");
+            if (!seenRows.has(rowStr)) {
+                seenRows.add(rowStr);
+                csv += rowStr + "\n";
+            }
         }
     });
 
