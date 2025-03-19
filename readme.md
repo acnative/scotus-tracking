@@ -12,10 +12,11 @@ SCOTUS Docket Search is a Chrome extension that opens and parses the SCOTUS Dock
 
 ## Installation
 
-1. **Download or Clone the Repository**  
-2. ** Install the extension ** by navigating to chrome:extensions (in your browser url bar)
+1. **Download or Clone the Repository**
+    - Here's a direct link: https://github.com/acnative/scotus-tracking/archive/refs/heads/main.zip
+3. ** Install the extension ** by navigating to chrome:extensions (in your browser url bar)
     - Make sure developer mode is toggled on in the top right
-3. Select load unpacked in the top left and choose the chrome folder from your download
+4. Select load unpacked in the top left and choose the chrome folder from your download
 
 ## Running
 
