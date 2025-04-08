@@ -242,7 +242,7 @@ function getRecentMonths() {
     let currentYear = now.getFullYear();
     const recent = [];
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 6; i++) {
         let monthIndex = currentMonthIndex - i;
         let year = currentYear;
         if (monthIndex < 0) {
@@ -354,6 +354,22 @@ async function processSearchResults(results) {
     return processed;
 }
 
+function formatDate(dateStr) {
+    // Split by whitespace
+    const parts = dateStr.trim().split(/\s+/);
+    if (parts.length < 3) return dateStr; // Fallback if format unexpected
+
+    const monthAbbrev = parts[0].toLowerCase();
+    const day = parts[1].padStart(2, '0');
+    const year = parts[2];
+    const months = {
+        jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+        jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12"
+    };
+    const mm = months[monthAbbrev] || "00";
+    return `${mm}/${day}/${year}`;
+}
+
 /**
  * Extracts docket entries from a given document.
  * This function mimics the extraction logic for proceedings/orders—
@@ -371,7 +387,8 @@ function extractDocketDetailsFromDoc(doc) {
         rows.forEach(row => {
             const cells = row.querySelectorAll("td");
             if (cells.length >= 2) {
-                const date = cells[0].innerText.trim();
+                const rawDate = cells[0].innerText.trim();
+                const date = formatDate(rawDate);
                 const detail = cells[1].innerText.trim();
                 // Only push rows where a valid date was found
                 if (date !== "" && detail !== "") {
@@ -405,7 +422,9 @@ function extractDocketDetailsFromDoc(doc) {
             // Pair every two lines as date and detail
             for (let i = 0; i < lines.length; i += 2) {
                 if (i + 1 < lines.length) {
-                    entries.push({ date: lines[i], detail: lines[i + 1] });
+                    const rawDate = lines[i].trim();
+                    const date = formatDate(rawDate);
+                    entries.push({ date: date, detail: lines[i + 1] });
                 }
             }
         }
